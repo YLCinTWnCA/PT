@@ -46,12 +46,18 @@ db.ref('mqText').on('value', snap => {
 function setupMarqueeLoop() {
     const mqEl = document.querySelector('.marquee-text');
     if (!mqEl) return;
-    mqEl.addEventListener('animationend', () => {
-        mqIdx = (mqIdx + 1) % mqTexts.length;
-        mqEl.textContent = mqTexts[mqIdx];
+    function setMarquee(text) {
+        mqEl.textContent = text;
+        // 動態計算動畫時間：每字0.8秒，最短10秒
+        const duration = Math.max(10, text.length * 0.8);
         mqEl.style.animation = 'none';
         void mqEl.offsetWidth;
-        mqEl.style.animation = 'marquee 60s linear';
+        mqEl.style.animation = `marquee ${duration}s linear`;
+    }
+    setMarquee(mqTexts[mqIdx]);
+    mqEl.addEventListener('animationend', () => {
+        mqIdx = (mqIdx + 1) % mqTexts.length;
+        setMarquee(mqTexts[mqIdx]);
     });
 }
 document.addEventListener('DOMContentLoaded', setupMarqueeLoop);
