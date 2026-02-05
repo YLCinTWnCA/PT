@@ -65,16 +65,28 @@
             document.getElementById('mqText').value = snap.val() || '😷 請配戴口罩並勤洗手，保護你我健康！';
         });
 
-        // 顯示資料夾現有圖片（僅支援已知檔案）
+        // 顯示資料夾現有圖片與已上傳圖片
         const allFiles = ["photo1.jpg", "photo2.jpg"];
         db.ref('photoFiles').once('value', snap => {
             const selectedFiles = snap.val() || [];
             const imgList = document.getElementById('imgList');
+            // 資料夾圖片
             allFiles.forEach(f => {
                 const div = document.createElement('div');
                 div.className = 'img-item';
                 div.innerHTML = `<img src="${f}" class="thumb"><label><input type="checkbox" value="${f}" ${selectedFiles.includes(f) ? 'checked' : ''}>${f}</label>`;
                 imgList.appendChild(div);
+            });
+            // Firebase 上傳圖片
+            db.ref('photos').once('value', snap2 => {
+                const savedPhotos = snap2.val() || [];
+                savedPhotos.forEach((src, idx) => {
+                    const key = `firebase_${idx}`;
+                    const div = document.createElement('div');
+                    div.className = 'img-item';
+                    div.innerHTML = `<img src="${src}" class="thumb"><label><input type="checkbox" value="${src}" ${selectedFiles.includes(src) ? 'checked' : ''}>上傳圖${idx+1}</label>`;
+                    imgList.appendChild(div);
+                });
             });
         });
 
