@@ -48,7 +48,14 @@ setInterval(() => {
     mqIdx = (mqIdx + 1) % mqTexts.length;
     mqText = mqTexts[mqIdx];
     const mqEl = document.querySelector('.marquee-text');
-    if (mqEl) mqEl.textContent = mqText;
+    if (mqEl) {
+        mqEl.textContent = mqText;
+        // 重新觸發動畫
+        mqEl.style.animation = 'none';
+        // 強制 reflow
+        void mqEl.offsetWidth;
+        mqEl.style.animation = '';
+    }
 }, 60000);
 
 // 監聽 photoFiles 與 photos
