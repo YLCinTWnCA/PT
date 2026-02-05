@@ -84,7 +84,8 @@
                     const key = `firebase_${idx}`;
                     const div = document.createElement('div');
                     div.className = 'img-item';
-                    div.innerHTML = `<img src="${src}" class="thumb"><label><input type="checkbox" value="${src}" ${selectedFiles.includes(src) ? 'checked' : ''}>上傳圖${idx+1}</label>`;
+                    div.innerHTML = `<img src="${src}" class="thumb"><label><input type="checkbox" value="${src}" ${selectedFiles.includes(src) ? 'checked' : ''}>上傳圖${idx+1}</label>
+                    <button type="button" style="margin-top:4px;font-size:12px;" onclick="deletePhoto(${idx})">刪除</button>`;
                     imgList.appendChild(div);
                 });
             });
@@ -158,6 +159,15 @@
                 alert('儲存失敗：' + (err && err.message ? err.message : err));
                 console.error('儲存失敗', err);
             }
+        }
+        // 刪除上傳圖片
+        window.deletePhoto = async function(idx) {
+            if (!confirm('確定要刪除此圖片？')) return;
+            const snap = await db.ref('photos').once('value');
+            let arr = snap.val() || [];
+            arr.splice(idx, 1);
+            await db.ref('photos').set(arr);
+            location.reload();
         }
     </script>
 </body>
