@@ -1,0 +1,107 @@
+html, body {
+    margin: 0;
+    padding: 0;
+    width: 100vw;
+    height: 100vh;
+    overflow: hidden;
+    font-family: 'Segoe UI', 'Microsoft JhengHei', 'PingFang TC', sans-serif;
+    background: linear-gradient(to bottom, #003366, #001f3f);
+}
+#app-container {
+    display: flex;
+    flex-direction: column;
+    height: 100vh;
+    padding: 10px 10px 5px 10px;
+    gap: 8px;
+    box-sizing: border-box;
+}
+#main-content {
+    flex: 1;
+    display: flex;
+    gap: 10px;
+    min-height: 0;
+}
+#video-container {
+    flex: 2.2;
+    border-radius: 8px;
+    overflow: hidden;
+    background: #000;
+    position: relative;
+}
+#progress-container {
+    flex: 0.8;
+    border-radius: 8px;
+    overflow: hidden;
+}
+#player {
+    width: 100%;
+    height: 100%;
+    position: absolute;
+    top: 0;
+    left: 0;
+}
+#footer-bar {
+    display: flex;
+    height: 40px;
+    gap: 10px;
+    align-items: stretch;
+    width: 100%;
+    z-index: 100;
+    margin-bottom: 0;
+}
+#marquee-container {
+    flex: 1;
+    background-color: #001529;
+    border: 1px solid #b0c4de;
+    border-radius: 4px;
+    display: flex;
+    align-items: center;
+    overflow: hidden;
+    position: relative;
+}
+#logo {
+    height: 80%;
+    z-index: 999;
+    margin: 0 10px;
+    position: relative;
+    background: transparent;
+}
+#timestamp-container {
+    background: #001529;
+    border: 1px solid #b0c4de;
+    padding: 0 15px;
+    border-radius: 4px;
+    display: flex;
+    align-items: center;
+    color: #fff;
+    font-size: 1.1em;
+    white-space: nowrap;
+    height: 40px;
+    min-height: 40px;
+    max-height: 40px;
+}
+.marquee-text-wrapper {
+    flex-grow: 1;
+    white-space: nowrap;
+    overflow: hidden;
+}
+.marquee-text {
+    display: inline-block;
+    padding-left: 100%;
+    animation: marquee 30s linear infinite;
+    font-size: 1.5em;
+    color: #fff;
+}
+@keyframes marquee {
+    0%   { transform: translateX(0); }
+    100% { transform: translateX(-150%); }
+}
+.slideshow-photo {
+    width: 100%;
+    height: 100%;
+    object-fit: cover;
+    border-radius: 8px;
+    box-shadow: 0 4px 16px rgba(0,0,0,0.2);
+    background: #fff;
+    border: 2px solid #b0c4de;
+}

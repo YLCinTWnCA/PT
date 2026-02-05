@@ -1,0 +1,152 @@
+<!DOCTYPE html>
+<html lang="zh-TW">
+<head>
+    <meta charset="UTF-8">
+    <title>看板內容管理系統</title>
+    <style>
+        body { font-family: sans-serif; padding: 30px; background: #f4f7f6; color: #333; }
+        .admin-box { max-width: 600px; margin: auto; background: white; padding: 25px; border-radius: 12px; box-shadow: 0 4px 10px rgba(0,0,0,0.1); }
+        h2 { border-bottom: 2px solid #003366; padding-bottom: 10px; color: #003366; }
+        .item { margin-bottom: 20px; }
+        label { display: block; margin-bottom: 8px; font-weight: bold; }
+        input, textarea { width: 100%; padding: 10px; border: 1px solid #ddd; border-radius: 5px; box-sizing: border-box; }
+        button { background: #003366; color: white; border: none; padding: 12px 25px; border-radius: 5px; cursor: pointer; width: 100%; font-size: 16px; margin-top: 10px; }
+        button:hover { background: #0055a3; }
+        #preview { display: flex; gap: 10px; margin-top: 10px; flex-wrap: wrap; }
+        .thumb { width: 80px; height: 50px; object-fit: cover; border-radius: 4px; }
+        .img-list { display: flex; gap: 10px; flex-wrap: wrap; margin-top: 10px; }
+        .img-item { display: flex; flex-direction: column; align-items: center; }
+        .img-item label { font-weight: normal; margin-top: 2px; font-size: 13px; }
+    </style>
+    <script src="https://www.gstatic.com/firebasejs/9.6.10/firebase-app-compat.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/9.6.10/firebase-database-compat.js"></script>
+</head>
+<body>
+    <div class="admin-box">
+        <h2>🏥 看板內容管理</h2>
+        <div class="item">
+            <label>YouTube 影片代碼 (ID)</label>
+            <input type="text" id="ytId" placeholder="例如: m_dhMSvUCIc">
+        </div>
+        <div class="item">
+            <label>跑馬燈公告文字</label>
+            <textarea id="mqText" rows="3"></textarea>
+        </div>
+        <div class="item">
+            <label>選擇資料夾現有圖片（可多選）</label>
+            <div id="imgList" class="img-list"></div>
+        </div>
+        <div class="item">
+            <label>新增幻燈片照片上傳</label>
+            <input type="file" id="photoInput" accept="image/*" multiple>
+            <div id="preview"></div>
+        </div>
+        <button onclick="save()">儲存設定並同步看板</button>
+    </div>
+
+    <script>
+        // Firebase 設定
+        const firebaseConfig = {
+          apiKey: "AIzaSyC_aT7nwS5PNGo67EB2tJrRjKW4gIElWps",
+          authDomain: "pttv-1ef51.firebaseapp.com",
+          projectId: "pttv-1ef51",
+          storageBucket: "pttv-1ef51.firebasestorage.app",
+          messagingSenderId: "590206250055",
+          appId: "1:590206250055:web:96ec186f39689ca973d562"
+        };
+        firebase.initializeApp(firebaseConfig);
+        const db = firebase.database();
+
+        // 初始化載入
+        db.ref('ytId').once('value', snap => {
+            document.getElementById('ytId').value = snap.val() || 'm_dhMSvUCIc';
+        });
+        db.ref('mqText').once('value', snap => {
+            document.getElementById('mqText').value = snap.val() || '😷 請配戴口罩並勤洗手，保護你我健康！';
+        });
+
+        // 顯示資料夾現有圖片（僅支援已知檔案）
+        const allFiles = ["photo1.jpg", "photo2.jpg"];
+        db.ref('photoFiles').once('value', snap => {
+            const selectedFiles = snap.val() || [];
+            const imgList = document.getElementById('imgList');
+            allFiles.forEach(f => {
+                const div = document.createElement('div');
+                div.className = 'img-item';
+                div.innerHTML = `<img src="${f}" class="thumb"><label><input type="checkbox" value="${f}" ${selectedFiles.includes(f) ? 'checked' : ''}>${f}</label>`;
+                imgList.appendChild(div);
+            });
+        });
+
+        // 預覽已上傳的圖片
+        const preview = document.getElementById('preview');
+        db.ref('photos').once('value', snap => {
+            const savedPhotos = snap.val() || [];
+            savedPhotos.forEach(src => {
+                const img = document.createElement('img');
+                img.src = src;
+                img.className = 'thumb';
+                preview.appendChild(img);
+            });
+        });
+
+        // 圖片壓縮工具
+        function compressImage(file, maxWidth = 1024, quality = 0.7) {
+            return new Promise(resolve => {
+                const img = new Image();
+                const reader = new FileReader();
+                reader.onload = e => {
+                    img.onload = () => {
+                        const scale = Math.min(1, maxWidth / img.width);
+                        const w = img.width * scale;
+                        const h = img.height * scale;
+                        const canvas = document.createElement('canvas');
+                        canvas.width = w;
+                        canvas.height = h;
+                        canvas.getContext('2d').drawImage(img, 0, 0, w, h);
+                        resolve(canvas.toDataURL('image/jpeg', quality));
+                    };
+                    img.src = e.target.result;
+                };
+                reader.readAsDataURL(file);
+            });
+        }
+
+        document.getElementById('photoInput').addEventListener('change', function() {
+            preview.innerHTML = '';
+            Array.from(this.files).forEach(file => {
+                compressImage(file).then(base64 => {
+                    const img = document.createElement('img');
+                    img.src = base64;
+                    img.className = 'thumb';
+                    preview.appendChild(img);
+                });
+            });
+        });
+
+        async function save() {
+            try {
+                await db.ref('ytId').set(document.getElementById('ytId').value);
+                await db.ref('mqText').set(document.getElementById('mqText').value);
+
+                // 儲存選擇的現有圖片
+                const imgList = document.getElementById('imgList');
+                const checked = Array.from(imgList.querySelectorAll('input[type=checkbox]:checked')).map(cb => cb.value);
+                await db.ref('photoFiles').set(checked);
+
+                // 儲存上傳的圖片（壓縮後）
+                const files = document.getElementById('photoInput').files;
+                if (files.length > 0) {
+                    const photoPromises = Array.from(files).map(file => compressImage(file));
+                    const base64Photos = await Promise.all(photoPromises);
+                    await db.ref('photos').set(base64Photos);
+                }
+                alert('設定成功！請刷新看板頁面查看效果。');
+            } catch (err) {
+                alert('儲存失敗：' + (err && err.message ? err.message : err));
+                console.error('儲存失敗', err);
+            }
+        }
+    </script>
+</body>
+</html>

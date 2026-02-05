@@ -1,0 +1,30 @@
+<!DOCTYPE html>
+<html lang="zh-TW">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>醫院即時衛教看板</title>
+    <link rel="stylesheet" href="style.css">
+</head>
+<body>
+    <div id="app-container">
+        <div id="main-content">
+            <div id="video-container">
+                <div id="player"></div>
+            </div>
+            <div id="progress-container"></div>
+        </div>
+        <div id="footer-bar">
+            <div id="marquee-container">
+                <img src="logo.png" alt="Logo" id="logo">
+                <div class="marquee-text-wrapper">
+                    <p class="marquee-text">😷 請配戴口罩並勤洗手，保護你我健康！🏥 祝您早日康復！</p>
+                </div>
+            </div>
+            <div id="timestamp-container"></div>
+        </div>
+    </div>
+    <script src="https://www.youtube.com/iframe_api"></script>
+    <script src="script.js"></script>
+</body>
+</html>
