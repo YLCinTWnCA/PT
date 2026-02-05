@@ -59,6 +59,11 @@ db.ref('photos').on('value', updatePhotos);
 
 // YouTube API 整合
 function onYouTubeIframeAPIReady() {
+    console.log("YouTube API Ready, ytId:", ytId);
+    if (!document.getElementById('player')) {
+        alert("找不到 #player 容器，YouTube 無法顯示");
+        return;
+    }
     window.player = new YT.Player('player', {
         videoId: ytId,
         playerVars: {
