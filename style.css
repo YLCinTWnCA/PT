@@ -105,6 +105,12 @@ html, body {
     object-fit: contain;
     border-radius: 8px;
     box-shadow: 0 4px 16px rgba(0,0,0,0.2);
-    background: #fff;
+    background: transparent;
     border: 2px solid #b0c4de;
+}
+#progress-container {
+    flex: 0.8;
+    border-radius: 8px;
+    overflow: hidden;
+    background: linear-gradient(to bottom, #003366, #001f3f);
 }
