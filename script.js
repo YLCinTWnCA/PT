@@ -128,6 +128,7 @@ document.addEventListener('DOMContentLoaded', () => {
         img.src = photos[index];
         img.className = "slideshow-photo";
         progressContainer.appendChild(img);
+        setTimeout(() => { img.style.opacity = "1"; }, 30);
     }
 
     setInterval(() => {

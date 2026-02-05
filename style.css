@@ -107,6 +107,8 @@ html, body {
     box-shadow: 0 4px 16px rgba(0,0,0,0.2);
     background: transparent;
     border: 2px solid #b0c4de;
+    opacity: 0;
+    transition: opacity 0.8s;
 }
 #progress-container {
     flex: 0.8;
