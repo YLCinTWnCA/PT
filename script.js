@@ -51,7 +51,7 @@ function setupMarqueeLoop() {
         mqEl.textContent = mqTexts[mqIdx];
         mqEl.style.animation = 'none';
         void mqEl.offsetWidth;
-        mqEl.style.animation = '';
+        mqEl.style.animation = 'marquee 60s linear';
     });
 }
 document.addEventListener('DOMContentLoaded', setupMarqueeLoop);
