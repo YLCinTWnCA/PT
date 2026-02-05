@@ -96,7 +96,10 @@ function onYouTubeIframeAPIReady() {
             'rel': 0
         },
         events: {
-            'onReady': (event) => event.target.playVideo(),
+            'onReady': (event) => {
+                event.target.mute();
+                event.target.playVideo();
+            },
             'onError': (event) => {
                 alert("YouTube 播放失敗，請檢查影片 ID 或瀏覽器設定。錯誤碼：" + event.data);
                 console.error("YouTube Player Error", event);
