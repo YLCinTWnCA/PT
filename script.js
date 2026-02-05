@@ -48,8 +48,8 @@ function setupMarqueeLoop() {
     if (!mqEl) return;
     function setMarquee(text) {
         mqEl.textContent = text;
-        // 動態計算動畫時間：每字2秒，最短16秒
-        const duration = Math.max(16, text.length * 2);
+        // 動畫時間固定 30 秒
+        const duration = 30;
         mqEl.style.animation = 'none';
         void mqEl.offsetWidth;
         mqEl.style.animation = `marquee ${duration}s linear`;
