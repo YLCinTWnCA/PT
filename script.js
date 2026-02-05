@@ -16,7 +16,13 @@ firebase.initializeApp(firebaseConfig);
 const db = firebase.database();
 
 let ytId = 'm_dhMSvUCIc';
-let mqText = '😷 請配戴口罩並勤洗手，保護你我健康！🏥';
+let mqTexts = [
+    '😷 請配戴口罩並勤洗手，保護你我健康！🏥',
+    '祝您早日康復！',
+    '本院關心您的健康，請遵守防疫規定。'
+];
+let mqText = mqTexts[0];
+let mqIdx = 0;
 let photos = ["photo1.jpg", "photo2.jpg", "photo3.jpg"];
 
 // 監聽 ytId
@@ -31,10 +37,19 @@ db.ref('ytId').on('value', snap => {
 // 監聽 mqText
 db.ref('mqText').on('value', snap => {
     const val = snap.val();
-    mqText = val && typeof val === 'string' ? val : '😷 請配戴口罩並勤洗手，保護你我健康！🏥';
+    mqTexts[0] = val && typeof val === 'string' ? val : mqTexts[0];
+    mqText = mqTexts[mqIdx];
     const mqEl = document.querySelector('.marquee-text');
     if (mqEl) mqEl.textContent = mqText;
 });
+
+// 跑馬燈多段 loop
+setInterval(() => {
+    mqIdx = (mqIdx + 1) % mqTexts.length;
+    mqText = mqTexts[mqIdx];
+    const mqEl = document.querySelector('.marquee-text');
+    if (mqEl) mqEl.textContent = mqText;
+}, 60000);
 
 // 監聽 photoFiles 與 photos
 function updatePhotos() {
