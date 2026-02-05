@@ -49,7 +49,7 @@ function setupMarqueeLoop() {
     function setMarquee(text) {
         mqEl.textContent = text;
         // 動畫時間固定 45 秒
-        const duration = 45;
+        const duration = 90;
         mqEl.style.animation = 'none';
         void mqEl.offsetWidth;
         mqEl.style.animation = `marquee ${duration}s linear`;
