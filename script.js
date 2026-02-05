@@ -52,7 +52,7 @@ function setupMarqueeLoop() {
         const duration = 90;
         mqEl.style.animation = 'none';
         void mqEl.offsetWidth;
-        mqEl.style.animation = `marquee ${duration}s linear`;
+        mqEl.style.animation = `marquee ${duration}s linear infinite`;
     }
     setMarquee(mqTexts[mqIdx]);
     mqEl.addEventListener('animationend', () => {
@@ -122,6 +122,7 @@ document.addEventListener('DOMContentLoaded', () => {
     let currentIdx = 0;
     function showPhoto(index) {
         progressContainer.innerHTML = "";
+        progressContainer.style.background = "linear-gradient(to bottom, #003366, #001f3f)";
         const img = document.createElement("img");
         img.src = photos[index];
         img.className = "slideshow-photo";
@@ -131,7 +132,7 @@ document.addEventListener('DOMContentLoaded', () => {
     setInterval(() => {
         currentIdx = (currentIdx + 1) % photos.length;
         showPhoto(currentIdx);
-    }, 5000);
+    }, 20000);
 
     // 日期時間
     function updateTime() {
