@@ -43,20 +43,18 @@ db.ref('mqText').on('value', snap => {
     if (mqEl) mqEl.textContent = mqText;
 });
 
-// 跑馬燈多段 loop
-setInterval(() => {
-    mqIdx = (mqIdx + 1) % mqTexts.length;
-    mqText = mqTexts[mqIdx];
+function setupMarqueeLoop() {
     const mqEl = document.querySelector('.marquee-text');
-    if (mqEl) {
-        mqEl.textContent = mqText;
-        // 重新觸發動畫
+    if (!mqEl) return;
+    mqEl.addEventListener('animationend', () => {
+        mqIdx = (mqIdx + 1) % mqTexts.length;
+        mqEl.textContent = mqTexts[mqIdx];
         mqEl.style.animation = 'none';
-        // 強制 reflow
         void mqEl.offsetWidth;
         mqEl.style.animation = '';
-    }
-}, 60000);
+    });
+}
+document.addEventListener('DOMContentLoaded', setupMarqueeLoop);
 
 // 監聽 photoFiles 與 photos
 function updatePhotos() {
