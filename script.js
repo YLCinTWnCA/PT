@@ -1,3 +1,8 @@
+window.onerror = function(msg, url, line, col, error) {
+  alert("JS Error: " + msg + " @ " + url + ":" + line);
+  return false;
+};
+console.log("script.js loaded");
 /* Firebase 即時同步版（PTtv 專案） */
 const firebaseConfig = {
   apiKey: "AIzaSyC_aT7nwS5PNGo67EB2tJrRjKW4gIElWps",
