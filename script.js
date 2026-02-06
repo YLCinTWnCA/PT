@@ -44,28 +44,8 @@ db.ref('mqText').on('value', snap => {
     if (mqEl) mqEl.textContent = mqText;
 });
 
-function setupMarqueeLoop() {
-    const mqEl = document.querySelector('.marquee-text');
-    if (!mqEl) return;
-    function setMarquee(text) {
-        mqEl.textContent = text;
-        // 動畫時間固定 45 秒
-        const duration = 90;
-        mqEl.style.animation = 'none';
-        void mqEl.offsetWidth;
-        mqEl.style.animation = `marquee ${duration}s linear infinite`;
-    }
-    setMarquee(mqTexts[mqIdx]);
-    mqEl.addEventListener('animationend', () => {
-        mqIdx = (mqIdx + 1) % mqTexts.length;
-        setMarquee(mqTexts[mqIdx]);
-    });
-}
-window.onload = function() {
-    setupMarqueeLoop();
-
-    // 監聽 photoFiles 與 photos
-    function updatePhotos() {
+// 監聽 photoFiles 與 photos
+function updatePhotos() {
     db.ref('photoFiles').once('value', snap => {
         let files = snap.val();
         if (files && Array.isArray(files) && files.length > 0) {
@@ -114,7 +94,14 @@ window.onYouTubeIframeAPIReady = function() {
             }
         }
     });
-}
+};
+
+document.addEventListener('DOMContentLoaded', () => {
+    // 跑馬燈初始化
+    const mqEl = document.querySelector('.marquee-text');
+    if (mqEl) {
+        mqEl.textContent = mqTexts[mqIdx];
+    }
 
     // 幻燈片與時間初始化
     const progressContainer = document.getElementById('progress-container');
@@ -147,4 +134,4 @@ window.onYouTubeIframeAPIReady = function() {
     showPhoto(0);
     updateTime();
     setInterval(updateTime, 1000);
-};
+});
