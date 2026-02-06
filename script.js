@@ -61,10 +61,11 @@ function setupMarqueeLoop() {
         setMarquee(mqTexts[mqIdx]);
     });
 }
-document.addEventListener('DOMContentLoaded', setupMarqueeLoop);
+window.onload = function() {
+    setupMarqueeLoop();
 
-// 監聽 photoFiles 與 photos
-function updatePhotos() {
+    // 監聽 photoFiles 與 photos
+    function updatePhotos() {
     db.ref('photoFiles').once('value', snap => {
         let files = snap.val();
         if (files && Array.isArray(files) && files.length > 0) {
@@ -115,7 +116,7 @@ function onYouTubeIframeAPIReady() {
     });
 }
 
-document.addEventListener('DOMContentLoaded', () => {
+    // 幻燈片與時間初始化
     const progressContainer = document.getElementById('progress-container');
     const timestampContainer = document.getElementById('timestamp-container');
 
@@ -146,4 +147,4 @@ document.addEventListener('DOMContentLoaded', () => {
     showPhoto(0);
     updateTime();
     setInterval(updateTime, 1000);
-});
+};
