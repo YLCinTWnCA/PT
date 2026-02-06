@@ -86,7 +86,7 @@ db.ref('photoFiles').on('value', updatePhotos);
 db.ref('photos').on('value', updatePhotos);
 
 // YouTube API 整合
-function onYouTubeIframeAPIReady() {
+window.onYouTubeIframeAPIReady = function() {
     console.log("YouTube API Ready, ytId:", ytId);
     if (!document.getElementById('player')) {
         alert("找不到 #player 容器，YouTube 無法顯示");
