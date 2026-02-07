@@ -122,7 +122,7 @@ document.addEventListener('DOMContentLoaded', () => {
     setInterval(() => {
         currentIdx = (currentIdx + 1) % photos.length;
         showPhoto(currentIdx);
-    }, 20000);
+    }, 30000);
 
     // 日期時間
     function updateTime() {
