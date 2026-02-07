@@ -41,7 +41,7 @@ db.ref('mqText').on('value', snap => {
     mqTexts[0] = val && typeof val === 'string' ? val : mqTexts[0];
     mqText = mqTexts[mqIdx];
     const mqEl = document.querySelector('.marquee-text');
-    if (mqEl) mqEl.textContent = mqText;
+    if (mqEl) mqEl.textContent = mqText + '　　　' + mqText + '　　　' + mqText;
 });
 
 // 監聽 photoFiles 與 photos
@@ -97,10 +97,11 @@ window.onYouTubeIframeAPIReady = function() {
 };
 
 document.addEventListener('DOMContentLoaded', () => {
-    // 跑馬燈初始化
+    // 跑馬燈初始化（重複文字實現無縫循環）
     const mqEl = document.querySelector('.marquee-text');
     if (mqEl) {
-        mqEl.textContent = mqTexts[mqIdx];
+        const text = mqTexts[mqIdx];
+        mqEl.textContent = text + '　　　' + text + '　　　' + text;
     }
 
     // 幻燈片與時間初始化
