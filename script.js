@@ -30,7 +30,8 @@ let photos = ["photo1.jpg", "photo2.jpg", "photo3.jpg"];
 db.ref('ytId').on('value', snap => {
     const val = snap.val();
     ytId = val && typeof val === 'string' ? val : 'm_dhMSvUCIc';
-    if (window.player && window.player.loadVideoById) {
+    // Player 已就緒才呼叫，避免時序問題
+    if (playerReady && window.player && window.player.loadVideoById) {
         window.player.loadVideoById(ytId);
     }
 });
@@ -65,6 +66,9 @@ function updatePhotos() {
 db.ref('photoFiles').on('value', updatePhotos);
 db.ref('photos').on('value', updatePhotos);
 
+// 追蹤 Player 是否已就緒
+let playerReady = false;
+
 // YouTube API 整合
 window.onYouTubeIframeAPIReady = function() {
     console.log("YouTube API Ready, ytId:", ytId);
@@ -74,23 +78,47 @@ window.onYouTubeIframeAPIReady = function() {
     }
     window.player = new YT.Player('player', {
         videoId: ytId,
+        width: '100%',
+        height: '100%',
         playerVars: {
             'autoplay': 1,
             'mute': 1,
-            'loop': 1,
-            'playlist': ytId,
             'controls': 0,
-            'modestbranding': 1,
-            'rel': 0
+            'rel': 0,
+            'playsinline': 1
         },
         events: {
             'onReady': (event) => {
+                playerReady = true;
                 event.target.mute();
                 event.target.playVideo();
+                console.log("YouTube Player 就緒，開始播放：", ytId);
+            },
+            'onStateChange': (event) => {
+                // 影片結束（狀態碼 0）時自動重新播放，取代不穩定的 loop 參數
+                if (event.data === YT.PlayerState.ENDED) {
+                    console.log("影片結束，重新播放");
+                    event.target.playVideo();
+                }
+                // 意外暫停時（狀態碼 2）自動恢復播放
+                if (event.data === YT.PlayerState.PAUSED) {
+                    setTimeout(() => {
+                        if (window.player && window.player.getPlayerState() === YT.PlayerState.PAUSED) {
+                            console.log("偵測到暫停，自動恢復播放");
+                            window.player.playVideo();
+                        }
+                    }, 1500);
+                }
             },
             'onError': (event) => {
-                alert("YouTube 播放失敗，請檢查影片 ID 或瀏覽器設定。錯誤碼：" + event.data);
-                console.error("YouTube Player Error", event);
+                console.error("YouTube 播放失敗，錯誤碼：" + event.data);
+                // 5 秒後自動重試，避免持續黑畫面
+                setTimeout(() => {
+                    if (window.player && window.player.loadVideoById) {
+                        console.log("重試載入影片：", ytId);
+                        window.player.loadVideoById(ytId);
+                    }
+                }, 5000);
             }
         }
     });
