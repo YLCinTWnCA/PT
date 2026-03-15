@@ -20,6 +20,8 @@
     </style>
     <script src="https://www.gstatic.com/firebasejs/9.6.10/firebase-app-compat.js"></script>
     <script src="https://www.gstatic.com/firebasejs/9.6.10/firebase-database-compat.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/9.6.10/firebase-auth-compat.js"></script>
+</head>
 </head>
 <body>
     <div class="admin-box">
@@ -56,6 +58,17 @@
         };
         firebase.initializeApp(firebaseConfig);
         const db = firebase.database();
+
+        // --- 新增這段：執行匿名登入 ---
+        firebase.auth().signInAnonymously()
+            .then(() => {
+                console.log("Firebase 匿名登入成功！已取得讀寫權限。");
+            })
+            .catch((error) => {
+                console.error("登入失敗:", error.code, error.message);
+                alert("無法取得寫入權限，請確認 Firebase 後台已啟用「匿名登入」");
+            });
+        // ------------------------------
 
         // 初始化載入
         db.ref('ytId').once('value', snap => {
