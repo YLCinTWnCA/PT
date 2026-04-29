@@ -44,6 +44,10 @@
             <div id="preview"></div>
         </div>
         <button onclick="save()">儲存設定並同步看板</button>
+        <div class="item" style="border-top:1px solid #ddd; padding-top:18px; margin-top:25px;">
+            <label>遠端控制</label>
+            <button type="button" onclick="reloadKiosks()" style="background:#a33;">🔄 立即重啟所有看板</button>
+        </div>
     </div>
 
     <script>
@@ -181,6 +185,17 @@
             arr.splice(idx, 1);
             await db.ref('photos').set(arr);
             location.reload();
+        }
+
+        // 遠端重啟所有看板
+        window.reloadKiosks = async function() {
+            if (!confirm('確定要重啟所有看板？所有看板會立刻重新載入頁面。')) return;
+            try {
+                await db.ref('reloadAt').set(Date.now());
+                alert('重啟訊號已送出，所有看板將在數秒內重新載入');
+            } catch (err) {
+                alert('傳送失敗：' + (err && err.message ? err.message : err));
+            }
         }
     </script>
 </body>

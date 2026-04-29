@@ -1,8 +1,8 @@
 window.onerror = function(msg, url, line, col, error) {
-  alert("JS Error: " + msg + " @ " + url + ":" + line);
+  console.error('JS Error:', msg, '@', url + ':' + line, error);
   return false;
 };
-console.log("script.js loaded");
+console.log('script.js loaded');
 /* Firebase 即時同步版（PTtv 專案） */
 const firebaseConfig = {
   apiKey: "AIzaSyC_aT7nwS5PNGo67EB2tJrRjKW4gIElWps",
@@ -68,6 +68,61 @@ function updatePhotos() {
 }
 db.ref('photoFiles').on('value', updatePhotos);
 db.ref('photos').on('value', updatePhotos);
+
+// === 看板穩定性與遠端控制 ===
+
+// 每日 04:00 自動重新整理（避免長時間運行的記憶體/快取累積）
+(function scheduleNightlyReload() {
+    const now = new Date();
+    const next = new Date(now);
+    next.setHours(4, 0, 0, 0);
+    if (next <= now) next.setDate(next.getDate() + 1);
+    setTimeout(() => location.reload(), next - now);
+})();
+
+// 遠端重啟：admin 寫入 reloadAt 時間戳，前台偵測到變化就 reload
+let _initialReloadAt = null;
+db.ref('reloadAt').on('value', snap => {
+    const val = snap.val();
+    if (_initialReloadAt === null) {
+        _initialReloadAt = val;  // 第一次只記錄基準值，不重整
+        return;
+    }
+    if (typeof val === 'number' && val !== _initialReloadAt) {
+        console.log('收到遠端重啟訊號');
+        location.reload();
+    }
+});
+
+// 連線狀態：離線顯示提示；恢復連線後重建 YouTube player（離線過久 iframe 常會卡死）
+function showOfflineBadge() {
+    let el = document.getElementById('offline-badge');
+    if (!el) {
+        el = document.createElement('div');
+        el.id = 'offline-badge';
+        el.textContent = '⚠ 離線';
+        el.style.cssText = 'position:fixed;top:8px;right:8px;background:#c00;color:#fff;padding:4px 12px;border-radius:4px;font-size:14px;font-weight:bold;z-index:9999;box-shadow:0 2px 6px rgba(0,0,0,0.3);';
+    }
+    if (!el.parentNode && document.body) document.body.appendChild(el);
+}
+function hideOfflineBadge() {
+    const el = document.getElementById('offline-badge');
+    if (el && el.parentNode) el.parentNode.removeChild(el);
+}
+window.addEventListener('offline', () => {
+    console.warn('離線');
+    showOfflineBadge();
+});
+window.addEventListener('online', () => {
+    console.log('已連線，3 秒後重建 YouTube 播放器');
+    hideOfflineBadge();
+    setTimeout(() => {
+        if (typeof createPlayer === 'function') createPlayer(ytId);
+    }, 3000);
+});
+document.addEventListener('DOMContentLoaded', () => {
+    if (!navigator.onLine) showOfflineBadge();
+});
 
 // YouTube API 整合
 function destroyPlayer() {
