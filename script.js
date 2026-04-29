@@ -124,6 +124,48 @@ document.addEventListener('DOMContentLoaded', () => {
     if (!navigator.onLine) showOfflineBadge();
 });
 
+// === 顯示優化 ===
+
+const BUILD_VERSION = '2026.04.30';
+
+// Loading 覆蓋層：YouTube 還沒 ready 時顯示，避免使用者看到黑畫面
+function showLoadingOverlay() {
+    const container = document.getElementById('video-container');
+    if (!container || document.getElementById('loading-overlay')) return;
+    const overlay = document.createElement('div');
+    overlay.id = 'loading-overlay';
+    overlay.style.cssText = 'position:absolute;inset:0;display:flex;flex-direction:column;align-items:center;justify-content:center;color:#b0c4de;font-size:1.3em;background:#000;z-index:10;text-align:center;';
+    overlay.innerHTML = '<div style="font-size:3em;margin-bottom:14px;">🏥</div><div>看板載入中…</div>';
+    container.appendChild(overlay);
+}
+function hideLoadingOverlay() {
+    const overlay = document.getElementById('loading-overlay');
+    if (!overlay) return;
+    overlay.style.transition = 'opacity 0.5s';
+    overlay.style.opacity = '0';
+    setTimeout(() => { if (overlay.parentNode) overlay.parentNode.removeChild(overlay); }, 500);
+}
+
+// 燒屏防護：每 5 分鐘微幅位移 app-container（醫院螢幕長時間開啟易留殘影）
+const BURN_IN_OFFSETS = [[0,0],[1,1],[2,2],[1,2],[0,1],[2,0],[1,0],[2,1]];
+let burnInIdx = 0;
+setInterval(() => {
+    burnInIdx = (burnInIdx + 1) % BURN_IN_OFFSETS.length;
+    const [x, y] = BURN_IN_OFFSETS[burnInIdx];
+    const app = document.getElementById('app-container');
+    if (app) app.style.transform = `translate(${x}px, ${y}px)`;
+}, 5 * 60 * 1000);
+
+// 版本標記與初始 loading 覆蓋層
+document.addEventListener('DOMContentLoaded', () => {
+    showLoadingOverlay();
+    const tag = document.createElement('div');
+    tag.id = 'version-tag';
+    tag.textContent = 'v' + BUILD_VERSION;
+    tag.style.cssText = 'position:fixed;bottom:2px;left:6px;color:rgba(176,196,222,0.35);font-size:10px;font-family:monospace;z-index:9999;pointer-events:none;';
+    document.body.appendChild(tag);
+});
+
 // YouTube API 整合
 function destroyPlayer() {
     if (window.player && typeof window.player.destroy === 'function') {
@@ -138,6 +180,7 @@ function destroyPlayer() {
 
 function createPlayer(videoId) {
     destroyPlayer();
+    showLoadingOverlay();
     if (typeof YT === 'undefined' || !YT.Player) return;
     if (!document.getElementById('player')) return;
     window.player = new YT.Player('player', {
@@ -157,6 +200,7 @@ function createPlayer(videoId) {
                 event.target.mute();
                 event.target.playVideo();
                 console.log('YouTube Player 就緒，開始播放：', videoId);
+                hideLoadingOverlay();
             },
             'onStateChange': (event) => {
                 // 影片結束 → 手動重新播放（取代不穩定的 loop 參數）
@@ -225,12 +269,21 @@ document.addEventListener('DOMContentLoaded', () => {
 
     // 幻燈片輪播
     let currentIdx = 0;
-    function showPhoto(index) {
+    function showPhoto(index, attempts = 0) {
+        if (attempts >= photos.length) {
+            console.warn('所有照片皆無法載入');
+            return;
+        }
+        currentIdx = index;
         progressContainer.innerHTML = "";
         progressContainer.style.background = "linear-gradient(to bottom, #003366, #001f3f)";
         const img = document.createElement("img");
         img.src = photos[index];
         img.className = "slideshow-photo";
+        img.onerror = () => {
+            console.warn('照片載入失敗，跳下一張：', photos[index]);
+            showPhoto((index + 1) % photos.length, attempts + 1);
+        };
         progressContainer.appendChild(img);
         setTimeout(() => { img.style.opacity = "1"; }, 30);
     }
