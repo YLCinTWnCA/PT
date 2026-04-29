@@ -15,7 +15,9 @@ const firebaseConfig = {
 firebase.initializeApp(firebaseConfig);
 const db = firebase.database();
 
-let ytId = 'm_dhMSvUCIc';
+const FALLBACK_YT_ID = 'm_dhMSvUCIc';
+let ytId = FALLBACK_YT_ID;
+let playerReady = false;
 let mqTexts = [
     '近期流感疫情升溫，請落實勤洗手及戴口罩，注意個人防護！',
     '本院復健科新增運動訓練，幫助您增強肌力，加速復原。若有需要請洽物理治療師諮詢。',
@@ -29,10 +31,11 @@ let photos = ["photo1.jpg", "photo2.jpg", "photo3.jpg"];
 // 監聽 ytId
 db.ref('ytId').on('value', snap => {
     const val = snap.val();
-    ytId = val && typeof val === 'string' ? val : 'm_dhMSvUCIc';
-    // Player 已就緒才呼叫，避免時序問題
-    if (playerReady && window.player && window.player.loadVideoById) {
-        window.player.loadVideoById(ytId);
+    const newId = val && typeof val === 'string' ? val : FALLBACK_YT_ID;
+    if (newId === ytId) return;
+    ytId = newId;
+    if (window.player && playerReady && typeof window.player.loadVideoById === 'function') {
+        try { window.player.loadVideoById(ytId); } catch (e) { console.warn('loadVideoById failed', e); }
     }
 });
 
@@ -66,18 +69,24 @@ function updatePhotos() {
 db.ref('photoFiles').on('value', updatePhotos);
 db.ref('photos').on('value', updatePhotos);
 
-// 追蹤 Player 是否已就緒
-let playerReady = false;
-
 // YouTube API 整合
-window.onYouTubeIframeAPIReady = function() {
-    console.log("YouTube API Ready, ytId:", ytId);
-    if (!document.getElementById('player')) {
-        alert("找不到 #player 容器，YouTube 無法顯示");
-        return;
+function destroyPlayer() {
+    if (window.player && typeof window.player.destroy === 'function') {
+        try { window.player.destroy(); } catch (e) {}
     }
+    window.player = null;
+    playerReady = false;
+    // YT.Player 會把 #player 替換成 iframe，destroy 後需重新放回 div
+    const container = document.getElementById('video-container');
+    if (container) container.innerHTML = '<div id="player"></div>';
+}
+
+function createPlayer(videoId) {
+    destroyPlayer();
+    if (typeof YT === 'undefined' || !YT.Player) return;
+    if (!document.getElementById('player')) return;
     window.player = new YT.Player('player', {
-        videoId: ytId,
+        videoId: videoId,
         width: '100%',
         height: '100%',
         playerVars: {
@@ -92,37 +101,60 @@ window.onYouTubeIframeAPIReady = function() {
                 playerReady = true;
                 event.target.mute();
                 event.target.playVideo();
-                console.log("YouTube Player 就緒，開始播放：", ytId);
+                console.log('YouTube Player 就緒，開始播放：', videoId);
             },
             'onStateChange': (event) => {
-                // 影片結束（狀態碼 0）時自動重新播放，取代不穩定的 loop 參數
+                // 影片結束 → 手動重新播放（取代不穩定的 loop 參數）
                 if (event.data === YT.PlayerState.ENDED) {
-                    console.log("影片結束，重新播放");
+                    console.log('影片結束，重新播放');
                     event.target.playVideo();
                 }
-                // 意外暫停時（狀態碼 2）自動恢復播放
+                // 意外暫停 → 1.5 秒後自動恢復
                 if (event.data === YT.PlayerState.PAUSED) {
                     setTimeout(() => {
                         if (window.player && window.player.getPlayerState() === YT.PlayerState.PAUSED) {
-                            console.log("偵測到暫停，自動恢復播放");
+                            console.log('偵測到暫停，自動恢復播放');
                             window.player.playVideo();
                         }
                     }, 1500);
                 }
             },
             'onError': (event) => {
-                console.error("YouTube 播放失敗，錯誤碼：" + event.data);
-                // 5 秒後自動重試，避免持續黑畫面
-                setTimeout(() => {
-                    if (window.player && window.player.loadVideoById) {
-                        console.log("重試載入影片：", ytId);
-                        window.player.loadVideoById(ytId);
-                    }
-                }, 5000);
+                console.error('YouTube Player Error code:', event.data);
+                // 2/100/101/150 = 影片無效或禁止嵌入 → 退回預設影片；其他 → 重試目前影片
+                const badVideo = [2, 100, 101, 150].indexOf(event.data) !== -1;
+                const recoverId = badVideo ? FALLBACK_YT_ID : ytId;
+                setTimeout(() => createPlayer(recoverId), 5000);
             }
         }
     });
+}
+
+window.onYouTubeIframeAPIReady = function() {
+    console.log('YouTube API Ready, ytId:', ytId);
+    createPlayer(ytId);
 };
+
+// Watchdog：每 30 秒檢查播放狀態，卡住超過 90 秒就重建播放器
+let lastHealthyTs = Date.now();
+setInterval(() => {
+    if (!window.player || !playerReady) return;
+    try {
+        const state = window.player.getPlayerState();
+        if (state === 1) { lastHealthyTs = Date.now(); return; }
+        // -1 未開始 / 2 暫停 / 5 cued → 嘗試恢復播放
+        if (state === -1 || state === 2 || state === 5) {
+            try { window.player.playVideo(); } catch (e) {}
+        }
+        if (Date.now() - lastHealthyTs > 90000) {
+            console.warn('Player stuck, recreating...');
+            lastHealthyTs = Date.now();
+            createPlayer(ytId);
+        }
+    } catch (e) {
+        console.warn('Watchdog error:', e);
+    }
+}, 30000);
 
 document.addEventListener('DOMContentLoaded', () => {
     // 跑馬燈初始化（重複文字實現無縫循環）
@@ -159,7 +191,7 @@ document.addEventListener('DOMContentLoaded', () => {
         const week = ['日', '一', '二', '三', '四', '五', '六'][now.getDay()];
         timestampContainer.textContent = `${now.getFullYear()}/${now.getMonth()+1}/${now.getDate()} (${week}) ${String(now.getHours()).padStart(2,'0')}:${String(now.getMinutes()).padStart(2,'0')}`;
     }
-    
+
     showPhoto(0);
     updateTime();
     setInterval(updateTime, 1000);
